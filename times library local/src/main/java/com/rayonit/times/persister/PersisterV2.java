@@ -13,7 +13,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -69,7 +68,7 @@ public class PersisterV2<T extends BaseTsObject> {
         Query query = findCurrentBucket(date);
 
         if (query == null) {
-            BucketV2 bucketV2 = new BucketV2(DateUtil.setTimeHierarchic(date, HierarchicLevel.HOUR_LEVEL, false));
+            BucketV2<BaseTsObject> bucketV2 = new BucketV2<>(DateUtil.setTimeHierarchic(date, HierarchicLevel.HOUR_LEVEL, false));
             mongoTemplate.save(bucketV2, persisterConfiguration.getCollection());
             bucketIds = findBucketIds();
             insertRaw(item, date);
@@ -79,9 +78,9 @@ public class PersisterV2<T extends BaseTsObject> {
             mongoTemplate.updateFirst(query, update, persisterConfiguration.getCollection());
     }
 
-    private List findByRange(Date start, Date end) {
+    public List<Document> findByRange(Date start, Date end) {
 
-        return mongoTemplate.find(new Query().addCriteria(Criteria.where("startTime").gte(start).and("endTime").lte(end)), PersisterV2.class,
+        return mongoTemplate.find(new Query().addCriteria(Criteria.where("startTime").gte(start).and("endTime").lte(end)), Document.class,
                 persisterConfiguration.getCollection());
     }
 
@@ -90,13 +89,13 @@ public class PersisterV2<T extends BaseTsObject> {
         Query query = new Query();
         if (aggregationOptions != AggregationOptions.AVG) {
 
-            query.addCriteria(Criteria.where("startTime").gte(start).and("endTime").lte(end))
-                    .fields().include(aggregationOptions.toString().toLowerCase());
-            result = mongoTemplate.find(query, PersisterV2.class,
+            query.addCriteria(Criteria.where("startTime").gte(start).and("endTime").lte(end).and(aggregationOptions.toString().toLowerCase()).exists(true))
+                    .fields().include("startTime").include(aggregationOptions.toString().toLowerCase()).exclude("_id");
+            result = mongoTemplate.find(query, Document.class,
                     persisterConfiguration.getCollection());
         } else {
-            query.addCriteria(Criteria.where("startTime").gte(start).and("endTime").lte(end))
-                    .fields().include("sum_samples").include("no_samples");
+            query.addCriteria(Criteria.where("startTime").gte(start).and("endTime").lte(end).and("no_samples").exists(true))
+                    .fields().include("startTime").include("sum_samples").include("no_samples").exclude("_id");
             result = calculateAverages(mongoTemplate.find(query, Document.class, persisterConfiguration.getCollection()));
 
         }
@@ -105,13 +104,14 @@ public class PersisterV2<T extends BaseTsObject> {
     }
 
     private List calculateAverages(List<Document> input){
-        List<Double> results = new ArrayList<>();
 
         for (Document document: input){
             Double res = (Double)document.get("sum_samples") / (Integer) document.get("no_samples");
-            results.add(res);
+            document.append("avg",res);
+            document.remove("sum_samples");
+            document.remove("no_samples");
         }
-        return results;
+        return input;
     }
 
 

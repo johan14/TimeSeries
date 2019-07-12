@@ -3,8 +3,9 @@ package com.rayonit.times.configuration;
 import lombok.Builder;
 import lombok.Data;
 
-@Data
+
 @Builder
+@Data
 public class PersisterConfiguration {
 
     private String database;
