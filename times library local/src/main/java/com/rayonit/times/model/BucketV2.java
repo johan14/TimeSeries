@@ -8,13 +8,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
 @Data
-public class BucketV2<T extends BaseTsObject> {
+public class BucketV2 {
 
     private Date startTime;
 
     private Date endTime;
 
-    private List<Holder<T>> items;
+    private List items;
 
     public BucketV2(Date startTime) {
         this.startTime = startTime;

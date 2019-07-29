@@ -7,5 +7,5 @@ public interface BaseTsObject {
 
     Date getCreationDate();
 
-    Map<String, Object> getPayload();
+    Object getPayload();
 }

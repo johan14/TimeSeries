@@ -35,9 +35,9 @@ public class DateUtil {
         return date;
     }
 
-    public static Date setTimeHierarchic(Date date, HierarchicLevel level, boolean timezone) {
+    public static Date setTimeHierarchic(Date date, HierarchicLevel level, boolean timezoneSetting) {
         Calendar calendar;
-        if (timezone) {
+        if (timezoneSetting) {
             TimeZone timeZone = TimeZone.getTimeZone("UTC");
             calendar = Calendar.getInstance(timeZone);
         } else calendar = Calendar.getInstance();
